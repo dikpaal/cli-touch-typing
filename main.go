@@ -6,7 +6,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/fatih/color"
 	"github.com/joho/godotenv"
 )
 
@@ -40,7 +42,7 @@ func main() {
 	// you have to load the .env first
 	_ = godotenv.Load()
 
-	endpoint := fmt.Sprintf("http://api.weatherapi.com/v1/forecast.json?key=%s&q=Iasi&days=1&aqi=no&alerts=no", os.Getenv("API_KEY"))
+	endpoint := fmt.Sprintf("http://api.weatherapi.com/v1/forecast.json?key=%s&q=Vancouver&days=1&aqi=no&alerts=no", os.Getenv("API_KEY"))
 
 	res, err := http.Get(endpoint)
 
@@ -69,5 +71,34 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(weather)
+	location, current, hours := weather.Location, weather.Current, weather.Forecast.Forecastday[0].Hour
+
+	fmt.Printf("%s, %s, %0.fC, %s\n",
+		location.Name,
+		location.Country,
+		current.TempC,
+		current.Condition.Text,
+	)
+
+	for _, hour := range hours {
+
+		date := time.Unix(hour.TimeEpoch, 0)
+
+		if date.Before(time.Now()) {
+			continue
+		}
+
+		message := fmt.Sprintf("%s - %.0fC, %0.f%%, %s\n",
+			date.Format("15:04"),
+			hour.TempC,
+			hour.ChanceOfRain,
+			hour.Condition.Text,
+		)
+
+		if hour.ChanceOfRain < 40 {
+			fmt.Print(message)
+		} else {
+			color.Red(message)
+		}
+	}
 }
