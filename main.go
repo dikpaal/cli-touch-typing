@@ -42,7 +42,16 @@ func main() {
 	// you have to load the .env first
 	_ = godotenv.Load()
 
-	endpoint := fmt.Sprintf("http://api.weatherapi.com/v1/forecast.json?key=%s&q=Vancouver&days=1&aqi=no&alerts=no", os.Getenv("API_KEY"))
+	// default value for the location
+	q := "Vancouver"
+
+	// if the user passes a city name
+
+	if len(os.Args) >= 2 {
+		q = os.Args[1]
+	}
+
+	endpoint := fmt.Sprintf("http://api.weatherapi.com/v1/forecast.json?key=%s&q="+q+"&days=1&aqi=no&alerts=no", os.Getenv("API_KEY"))
 
 	res, err := http.Get(endpoint)
 
