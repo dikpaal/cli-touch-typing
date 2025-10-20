@@ -1,113 +1,24 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"time"
-
-	"github.com/fatih/color"
-	"github.com/joho/godotenv"
+	"math/rand"
 )
-
-type Weather struct {
-	Location struct {
-		Name    string `json:"name"`
-		Country string `json:"country"`
-	} `json:"location"`
-	Current struct {
-		TempC     float64 `json:"temp_c"`
-		Condition struct {
-			Text string `json:"text"`
-		} `json:"condition"`
-	} `json:"current"`
-	Forecast struct {
-		Forecastday []struct {
-			Hour []struct {
-				TimeEpoch int64   `json:"time_epoch"`
-				TempC     float64 `json:"temp_c"`
-				Condition struct {
-					Text string `json:"text"`
-				} `json:"condition"`
-				ChanceOfRain float64 `json:"chance_of_rain"`
-			} `json:"hour"`
-		} `json:"forecastday"`
-	} `json:"forecast"`
-}
 
 func main() {
 
-	// you have to load the .env first
-	_ = godotenv.Load()
-
-	// default value for the location
-	q := "Vancouver"
-
-	// if the user passes a city name
-
-	if len(os.Args) >= 2 {
-		q = os.Args[1]
+	words := []string{
+		"time", "person", "year", "way", "day", "thing", "man", "world", "life", "hand",
+		"part", "child", "eye", "woman", "place", "work", "week", "case", "point", "government",
+		"company", "number", "group", "problem", "fact", "be", "have", "do", "say", "get",
+		"make", "go", "know", "take", "see", "come", "think", "look", "want", "give",
+		"use", "find", "tell", "ask", "work", "seem", "feel", "try", "leave", "call",
 	}
 
-	endpoint := fmt.Sprintf("http://api.weatherapi.com/v1/forecast.json?key=%s&q="+q+"&days=1&aqi=no&alerts=no", os.Getenv("API_KEY"))
+	// shuffle the slice
+	rand.Shuffle(len(words), func(i, j int) { words[i], words[j] = words[j], words[i] })
 
-	res, err := http.Get(endpoint)
+	randomWords := words[:10]
 
-	if err != nil {
-		panic(err)
-	}
-
-	// close the response body when done
-
-	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		panic("Error: Unable to fetch weather data")
-	}
-
-	body, err := io.ReadAll(res.Body)
-
-	if err != nil {
-		panic(err)
-	}
-
-	var weather Weather
-
-	err = json.Unmarshal(body, &weather)
-	if err != nil {
-		panic(err)
-	}
-
-	location, current, hours := weather.Location, weather.Current, weather.Forecast.Forecastday[0].Hour
-
-	fmt.Printf("%s, %s, %0.fC, %s\n",
-		location.Name,
-		location.Country,
-		current.TempC,
-		current.Condition.Text,
-	)
-
-	for _, hour := range hours {
-
-		date := time.Unix(hour.TimeEpoch, 0)
-
-		if date.Before(time.Now()) {
-			continue
-		}
-
-		message := fmt.Sprintf("%s - %.0fC, %0.f%%, %s\n",
-			date.Format("15:04"),
-			hour.TempC,
-			hour.ChanceOfRain,
-			hour.Condition.Text,
-		)
-
-		if hour.ChanceOfRain < 40 {
-			fmt.Print(message)
-		} else {
-			color.Red(message)
-		}
-	}
+	fmt.Println(randomWords)
 }
